@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pronote</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        header {
+            background: #4CAF50;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+        
+        nav {
+            background: #333;
+            padding: 1rem;
+        }
+        
+        nav a {
+            color: white;
+            margin: 0 1rem;
+            text-decoration: none;
+        }
+        
+        main {
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        footer {
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 1rem;
+            margin-top: 2rem;
+        }
+
+        /* dashboard cards */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        .card {
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .card h2 {
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+            color: #333;
+        }
+        .card p {
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        /* Pronote-like visual theme */
+        body {
+            background: #f3f6f6;
+            color: #263238;
+        }
+        header {
+            background: linear-gradient(90deg,#0b6b61,#0fa88c);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            padding: 0.75rem 1rem;
+        }
+        header h1 { font-size: 1.25rem; letter-spacing: .5px; }
+        nav {
+            background: #263238;
+            padding: 0.5rem 1rem;
+            display:flex; gap:0.5rem; align-items:center;
+        }
+        nav a {
+            color: #e0f7f4; background: transparent; padding:0.5rem .75rem; border-radius:4px; text-decoration:none;
+        }
+        nav a:hover { background: rgba(255,255,255,0.04); }
+        .card { background: white; }
+
+        /* Notes specific style similar to Pronote */
+        .subject-box { border-left: 6px solid #0fa88c; margin-bottom:0.75rem; background:#fff; }
+        .subject-header { display:flex; align-items:center; justify-content:space-between; padding:0.6rem 0.75rem; border-bottom:1px solid #eef2f2; }
+        .subject-title { font-weight:700; color:#0b6b61; }
+        .subject-average { font-weight:700; color:#0b6b61; }
+        .notes-list { list-style:none; margin:0; padding:0; }
+        .note-item { display:flex; align-items:flex-start; padding:0.6rem 0.75rem; border-bottom:1px solid #f0f4f4; }
+        .note-left { display:flex; gap:0.75rem; align-items:center; flex:1; }
+        .note-date { background:#e6f7f2; color:#006a58; padding:6px 8px; border-radius:4px; font-size:0.8rem; min-width:56px; text-align:center; }
+        .note-meta { font-size:0.9rem; }
+        .note-title { font-weight:600; color:#16383a; }
+        .note-sub { color:#6c7575; font-size:0.85rem; }
+        .note-score { font-weight:700; color:#16383a; min-width:64px; text-align:right; }
+
+        /* compact buttons */
+        button { background:#0fa88c; color:white; border:none; border-radius:4px; cursor:pointer; }
+        button:hover { opacity:0.95; }
+
+        /* timetable styles */
+        .timetable {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .timetable .row {
+            display: grid;
+            grid-template-columns: 80px repeat(5, 1fr);
+            gap: 8px;
+            align-items: stretch;
+        }
+        .timetable .header, .timetable .cell {
+            background: #f7f9fb;
+            border: 1px solid #e0e6ea;
+            padding: 8px;
+            border-radius: 4px;
+            min-height: 48px;
+            box-sizing: border-box;
+        }
+        .timetable .time {
+            font-weight: 600;
+            background: transparent;
+            border: none;
+            padding: 0 8px;
+            color: #666;
+        }
+        .lesson {
+            padding: 6px 8px;
+            border-radius: 4px;
+            color: #222;
+            font-size: 0.85rem;
+        }
+        .lesson.math { background:#FADBD8; border:1px solid #F5B7B1; }
+        .lesson.sci  { background:#D6EAF8; border:1px solid #AED6F1; }
+        .lesson.lang { background:#D5F5E3; border:1px solid #ABEBC6; }
+        .lesson.art  { background:#F9E79F; border:1px solid #F7DC6F; }
+
+        /* past lesson (grisé) */
+        .past { opacity: 0.35; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Bienvenue sur Pronote Pro</h1>
+    </header>
+    
+    <nav>
+        <a href="#" onclick="showDashboard(); return false;">Accueil</a>
+        <a href="#" onclick="showFullNotes(); return false;">Notes</a>
+        <a href="#" onclick="showAbout(); return false;">À propos</a>
+        <a href="#" onclick="showContact(); return false;">Contact</a>
+        <a href="#" onclick="showFullWeek(); return false;">Semaine</a>
+    </nav>
+    
+    <main>
+        <!-- tableau de bord à trois colonnes similaire à Pronote -->
+        <div class="dashboard">
+            <div class="card schedule">
+                <h2>Emploi du temps — Aujourd'hui</h2>
+                <div id="timetableContainer">
+                    <!-- le contenu est généré dynamiquement par JavaScript -->
+                </div>
+            </div>
+            <div class="card tasks">
+                <h2>Travail à faire</h2>
+                <p>Liste des devoirs et leçons à préparer</p>
+            </div>
+            <div class="card resources">
+                <h2>Ressources pédagogiques</h2>
+                <p>Derniers fichiers partagés par les professeurs</p>
+            </div>
+            <div class="card correspondence">
+                <h2>Carnet de correspondance</h2>
+                <p>Absences justifiées / non justifiées</p>
+            </div>
+            <div class="card notes">
+                <h2>Dernières notes</h2>
+                <p>Résultats récents par matière</p>
+            </div>
+            <div class="card menu">
+                <h2>Menu de la cantine</h2>
+                <p>Repas du jour et du lendemain</p>
+            </div>
+        </div>
+    </main>
+    
+    <footer>
+        <p>&copy; 2024 Mon Site. Tous droits réservés.</p>
+    </footer>
+</body>
+</html>
+
+<script>
+    function login() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        
+        if (username && password) {
+            alert('Connexion réussie!');
+            document.getElementById('loginForm').style.display = 'none';
+            document.body.style.display = 'block';
+        } else {
+            alert('Veuillez entrer le bon identifiant et le bon mot de passe.');
+        }
+    }
+    
+    window.onload = function() {
+        document.body.innerHTML = '<div id="loginForm" style="display:flex; justify-content:center; align-items:center; height:100vh; background:#f0f0f0;"><div style="background:white; padding:2rem; border-radius:8px; box-shadow:0 0 10px rgba(0,0,0,0.1);"><h2>Connexion</h2><input type="text" id="username" placeholder="Identifiant" style="width:100%; padding:0.5rem; margin:0.5rem 0;"><input type="password" id="password" placeholder="Mot de passe" style="width:100%; padding:0.5rem; margin:0.5rem 0;"><button onclick="login()" style="width:100%; padding:0.5rem; background:#4CAF50; color:white; border:none; cursor:pointer; margin-top:1rem;">Connexion</button></div></div>' + document.body.innerHTML;
+    };
+</script>
+<style>
+    .rating-container {
+        padding: 2rem;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .star {
+        font-size: 2rem;
+        cursor: pointer;
+        color: #ddd;
+        margin: 0 0.5rem;
+    }
+    
+    .star.active {
+        color: #FFD700;
+    }
+    
+    .color-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        padding: 2rem;
+    }
+    
+    .color-box {
+        height: 150px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    
+    .color-box:hover {
+        transform: scale(1.05);
+    }
+</style>
+
+<script>
+    function showRating() {
+        document.querySelector('main').innerHTML = `
+            <section id="notes">
+                <h2>Système de Notes</h2>
+                <div class="rating-container">
+                    <p>Évaluez ce site :</p>
+                    <div id="stars"></div>
+                    <p id="ratingText" style="margin-top:1rem;"></p>
+                </div>
+            </section>
+        `;
+        initializeRating();
+    }
+    
+    function initializeRating() {
+        const starsContainer = document.getElementById('stars');
+        for (let i = 1; i <= 5; i++) {
+            const star = document.createElement('span');
+            star.className = 'star';
+            star.textContent = '★';
+            star.onclick = () => setRating(i);
+            starsContainer.appendChild(star);
+        }
+    }
+    
+    function setRating(rating) {
+        const stars = document.querySelectorAll('.star');
+        stars.forEach((star, index) => {
+            if (index < rating) star.classList.add('active');
+            else star.classList.remove('active');
+        });
+        document.getElementById('ratingText').textContent = `Note : ${rating}/5`;
+    }
+    
+    function showColors() {
+        document.querySelector('main').innerHTML = `
+            <section id="couleurs">
+                <h2>Palette de Couleurs</h2>
+                <div class="color-grid" id="colorGrid"></div>
+            </section>
+        `;
+        initializeColors();
+    }
+    
+    function initializeColors() {
+        const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2'];
+        const grid = document.getElementById('colorGrid');
+        colors.forEach(color => {
+            const box = document.createElement('div');
+            box.className = 'color-box';
+            box.style.backgroundColor = color;
+            box.title = color;
+            grid.appendChild(box);
+        });
+    }
+    
+    // Ajouter les boutons à la nav
+    document.addEventListener('DOMContentLoaded', function() {
+        const nav = document.querySelector('nav');
+        const btnRating = document.createElement('button');
+        btnRating.textContent = 'Notes';
+        btnRating.onclick = showRating;
+        btnRating.style.cssText = 'background:#4CAF50; color:white; border:none; padding:0.5rem 1rem; cursor:pointer; margin-left:1rem;';
+        
+        const btnColors = document.createElement('button');
+        btnColors.textContent = 'Couleurs';
+        btnColors.onclick = showColors;
+        btnColors.style.cssText = 'background:#4CAF50; color:white; border:none; padding:0.5rem 1rem; cursor:pointer; margin-left:0.5rem;';
+        
+        nav.appendChild(btnRating);
+        nav.appendChild(btnColors);
+    });
+</script>
+
+<script>
+// Données simplifiées de l'emploi du temps (exemple) : heures et matières par jour (1=Lundi .. 5=Vendredi)
+const timetableData = [
+    { time: '08:30', lessons: {1:{title:'Mathématiques', room:'43', cls:'math'},2:{title:'Arts plastiques',room:'30',cls:'art'},3:{title:'Anglais LV1',room:'50',cls:'lang'},4:{title:'Sciences & Terre',room:'21',cls:'sci'},5:{title:'Mathématiques',room:'43',cls:'math'}}},
+    { time: '10:30', lessons: {1:{title:'Physique-Chimie',room:'12',cls:'sci'},2:{title:'Espagnol LV2',room:'39',cls:'lang'},3:{title:'Éducation musicale',room:'25',cls:'art'},4:{title:'Mathématiques',room:'43',cls:'math'},5:{title:'EPS',room:'Gymnase',cls:'sci'}}},
+    { time: '14:00', lessons: {1:{title:'Français',room:'10',cls:'lang'},2:{title:'Histoire-Géo',room:'37',cls:'sci'},3:{title:'Travail autonome',room:'Bureau',cls:'art'},4:{title:'Anglais LV1',room:'50',cls:'lang'},5:{title:'Soutien Maths',room:'43',cls:'math'}}}
+];
+
+function ensureTimetableShell(title = 'Emploi du temps', showReturn = true) {
+    const main = document.querySelector('main');
+    if (!main) return null;
+    let backBtn = '';
+    if (showReturn) backBtn = '<button onclick="showTodayView()" style="margin-right:8px;">Voir aujourd\'hui</button>';
+    main.innerHTML = `
+        <div class="card schedule">
+            <h2>${title}</h2>
+            <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">${backBtn}</div>
+            <div id="timetableContainer"></div>
+        </div>`;
+    return document.getElementById('timetableContainer');
+}
+
+function ensureNotesShell(title = 'Notes', showReturn = true) {
+    const main = document.querySelector('main');
+    if (!main) return null;
+    let backBtn = '';
+    if (showReturn) backBtn = '<button onclick="showDashboard()" style="margin-right:8px;">Retour au tableau de bord</button>';
+    main.innerHTML = `
+        <div class="card notes full">
+            <h2>${title}</h2>
+            <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">${backBtn}</div>
+            <div id="notesContainer"></div>
+        </div>`;
+    return document.getElementById('notesContainer');
+}
+
+function renderTodayTimetable() {
+    // If the dashboard (multiple cards) exists, render timetable inside the schedule card.
+    const dashboard = document.querySelector('.dashboard');
+    const scheduleCard = dashboard ? document.querySelector('.dashboard .card.schedule') : null;
+    let container = null;
+    if (scheduleCard) {
+        container = scheduleCard.querySelector('#timetableContainer');
+        if (!container) {
+            scheduleCard.innerHTML = '<h2>Emploi du temps — Aujourd\'hui</h2><div id="timetableContainer"></div>';
+            container = scheduleCard.querySelector('#timetableContainer');
+        }
+    } else {
+        // fallback: replace main with timetable-only view
+        container = ensureTimetableShell("Emploi du temps — Aujourd'hui", true);
+    }
+    if (!container) return;
+
+    const today = (new Date()).getDay(); // 0=Sun,1=Mon..6=Sun
+    const weekday = (today >=1 && today <=5) ? today : 1; // default Monday on weekend
+
+    let html = '<div class="timetable">';
+    html += '<div class="row header"><div class="time">Heure</div><div class="header">Aujourd\'hui</div></div>';
+
+    timetableData.forEach(slot => {
+        const lesson = slot.lessons[weekday];
+        html += '<div class="row">';
+        html += `<div class="time">${slot.time}</div>`;
+        if (lesson) {
+            html += `<div class="cell"><div class="lesson ${lesson.cls}" data-time="${slot.time}"><strong>${lesson.title}</strong><br><small>Salle ${lesson.room}</small></div></div>`;
+        } else {
+            html += '<div class="cell"><div class="lesson">—</div></div>';
+        }
+        html += '</div>';
+    });
+
+    html += '</div>';
+    container.innerHTML = html;
+    updateTodayHighlights();
+}
+
+// Griser les créneaux passés par rapport à l'heure actuelle
+function updateTodayHighlights() {
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    document.querySelectorAll('#timetableContainer .lesson').forEach(el => {
+        const t = el.getAttribute('data-time');
+        if (!t) return;
+        const parts = t.split(':').map(Number);
+        const slotMinutes = parts[0] * 60 + parts[1];
+        if (slotMinutes < currentMinutes) el.classList.add('past');
+        else el.classList.remove('past');
+    });
+}
+
+// Mise en place du rafraîchissement silencieux toutes les 30s
+document.addEventListener('DOMContentLoaded', function() {
+    // rendre l'accueil au chargement
+    // créer le rendu initial : afficher le tableau de bord complet
+    if (typeof showDashboard === 'function') showDashboard();
+    // remplir la carte emploi du temps dans le dashboard
+    renderTodayTimetable();
+    // actualiser les surbrillances toutes les 30s (30000 ms)
+    setInterval(function() {
+        // Mettre à jour les états sans recharger la page
+        if (!window.isFullWeek) updateTodayHighlights();
+    }, 30000);
+});
+</script>
+
+<script>
+// full week view: navigation and rendering
+window.currentWeekOffset = 0;
+window.isFullWeek = false;
+
+function showFullWeek(offset = 0) {
+    window.currentWeekOffset = offset;
+    window.isFullWeek = true;
+    renderFullTimetable(offset);
+}
+
+function renderFullTimetable(weekOffset) {
+    const container = ensureTimetableShell("Emploi du temps — Semaine", true);
+    if (!container) return;
+    const now = new Date();
+    // calculate monday of the requested week
+    const d = new Date(now);
+    const day = d.getDay();
+    const diffToMonday = (day >= 1 && day <= 6) ? day - 1 : 6; // Sun->prev Mon
+    const monday = new Date(d);
+    monday.setDate(d.getDate() - diffToMonday + (weekOffset * 7));
+
+    // header with prev/next
+    const weekLabel = `${monday.toLocaleDateString()} - ${new Date(monday.getFullYear(), monday.getMonth(), monday.getDate()+4).toLocaleDateString()}`;
+    let html = `<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;"><div><button onclick="showFullWeek(window.currentWeekOffset-1)">‹ Semaine précédente</button></div><div style="font-weight:700">Semaine: ${weekLabel}</div><div><button onclick="showFullWeek(window.currentWeekOffset+1)">Semaine suivante ›</button></div></div>`;
+
+    // table header
+    html += '<div class="timetable week">';
+    html += '<div class="row header"><div class="time">Heure</div>';
+    const dayNames = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi'];
+    for (let i=0;i<5;i++) {
+        const date = new Date(monday);
+        date.setDate(monday.getDate()+i);
+        html += `<div class="header">${dayNames[i]}<br><small>${date.toLocaleDateString()}</small></div>`;
+    }
+    html += '</div>';
+
+    timetableData.forEach(slot => {
+        html += '<div class="row">';
+        html += `<div class="time">${slot.time}</div>`;
+        for (let i=1;i<=5;i++) {
+            const lesson = slot.lessons[i];
+            if (lesson) {
+                // determine if this cell corresponds to today and is past
+                const cellDate = new Date(monday);
+                cellDate.setDate(monday.getDate() + (i-1));
+                const isToday = (new Date()).toDateString() === cellDate.toDateString();
+                let pastClass = '';
+                if (isToday) {
+                    const nowMinutes = (new Date()).getHours()*60 + (new Date()).getMinutes();
+                    const parts = slot.time.split(':').map(Number);
+                    const slotMinutes = parts[0]*60 + parts[1];
+                    if (slotMinutes < nowMinutes) pastClass = ' past';
+                }
+                html += `<div class="cell"><div class="lesson ${lesson.cls}${pastClass}"><strong>${lesson.title}</strong><br><small>Salle ${lesson.room}</small></div></div>`;
+            } else {
+                html += '<div class="cell"><div class="lesson">—</div></div>';
+            }
+        }
+        html += '</div>';
+    });
+
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+// allow returning to today view
+function showTodayView() {
+    window.isFullWeek = false;
+    renderTodayTimetable();
+}
+</script>
+
+<script>
+function showFullNotes() {
+    window.isFullWeek = false;
+    const container = ensureNotesShell('Notes — Détails', true);
+    if (!container) return;
+    renderGrades(container);
+}
+</script>
+
+<script>
+// Dashboard rendering and grades module
+function showDashboard() {
+    const main = document.querySelector('main');
+    if (!main) return;
+    main.innerHTML = `
+        <div class="dashboard">
+            <div class="card schedule">
+                <h2>Emploi du temps — Aujourd'hui</h2>
+                <div id="timetableContainer"></div>
+            </div>
+            <div class="card tasks">
+                <h2>Travail à faire</h2>
+                <p>Liste des devoirs et leçons à préparer</p>
+            </div>
+            <div class="card resources">
+                <h2>Ressources pédagogiques</h2>
+                <p>Derniers fichiers partagés par les professeurs</p>
+            </div>
+            <div class="card correspondence">
+                <h2>Carnet de correspondance</h2>
+                <p>Absences justifiées / non justifiées</p>
+            </div>
+            <div class="card notes" id="notesCard">
+                <h2>Dernières notes</h2>
+                <div id="notesContent">Chargement…</div>
+            </div>
+            <div class="card menu">
+                <h2>Menu de la cantine</h2>
+                <p>Repas du jour et du lendemain</p>
+            </div>
+        </div>`;
+    // populate schedule and notes
+    renderTodayTimetable();
+    renderGrades();
+}
+
+// Grades management: persistent storage + UI for adding notes
+const GRADES_KEY = 'pronote_grades_v1';
+
+function loadGrades() {
+    const raw = localStorage.getItem(GRADES_KEY);
+    if (raw) {
+        try { return JSON.parse(raw); } catch(e) { /* ignore */ }
+    }
+    // generate default random grades if none saved
+    const subjects = ['Mathématiques','Français','Anglais LV1','Histoire-Géo','Sciences'];
+    const gradesBySubject = {};
+    subjects.forEach(sub => {
+        const count = 3 + Math.floor(Math.random()*8); // 3..10
+        gradesBySubject[sub] = Array.from({length: count}, () => +(Math.random()*20).toFixed(2));
+    });
+    localStorage.setItem(GRADES_KEY, JSON.stringify(gradesBySubject));
+    return gradesBySubject;
+}
+
+function saveGrades() {
+    if (window.gradesBySubject) {
+        localStorage.setItem(GRADES_KEY, JSON.stringify(window.gradesBySubject));
+    }
+}
+
+function addNotePrompt(subject) {
+    const val = prompt(`Ajouter une note pour ${subject} (0-20)`);
+    if (val === null) return; // cancelled
+    const num = parseFloat(val.replace(',', '.'));
+    if (isNaN(num) || num < 0 || num > 20) { alert('Note invalide, entre 0 et 20.'); return; }
+    if (!window.gradesBySubject) window.gradesBySubject = loadGrades();
+    if (!window.gradesBySubject[subject]) window.gradesBySubject[subject] = [];
+    window.gradesBySubject[subject].push(+num.toFixed(2));
+    saveGrades();
+    // re-render current view
+    const notesContainer = document.getElementById('notesContainer') || document.getElementById('notesContent');
+    if (notesContainer) renderGrades(notesContainer);
+    else renderGrades();
+}
+
+function renderGrades(containerElement) {
+    if (!window.gradesBySubject) window.gradesBySubject = loadGrades();
+    const gradesBySubject = window.gradesBySubject;
+
+    // build HTML table
+    let html = '<table style="width:100%; border-collapse:collapse;">';
+    html += '<thead><tr><th style="text-align:left; padding:6px; border-bottom:1px solid #ddd;">Matière</th><th style="text-align:left; padding:6px; border-bottom:1px solid #ddd;">Notes</th><th style="text-align:right; padding:6px; border-bottom:1px solid #ddd;">Nb</th><th style="text-align:right; padding:6px; border-bottom:1px solid #ddd;">Moyenne</th><th style="padding:6px; border-bottom:1px solid #ddd;">Actions</th></tr></thead><tbody>';
+
+    let totalSum = 0, totalCount = 0;
+    Object.keys(gradesBySubject).forEach(sub => {
+        const arr = gradesBySubject[sub] || [];
+        const sum = arr.reduce((a,b)=>a+b,0);
+        const avg = arr.length ? (sum/arr.length) : 0;
+        totalSum += sum; totalCount += arr.length;
+        const notesStr = arr.map(n => n.toFixed(2)).join(', ');
+        html += `<tr><td style="padding:6px; border-bottom:1px solid #f0f0f0;">${sub}</td><td style="padding:6px; border-bottom:1px solid #f0f0f0;">${notesStr}</td><td style="padding:6px; text-align:right; border-bottom:1px solid #f0f0f0;">${arr.length}</td><td style="padding:6px; text-align:right; border-bottom:1px solid #f0f0f0;">${avg.toFixed(2)}</td><td style="padding:6px; text-align:center; border-bottom:1px solid #f0f0f0;"><button onclick="addNotePrompt('${sub}')" style="padding:.25rem .5rem;">Ajouter</button></td></tr>`;
+    });
+    html += '</tbody></table>';
+    const generalAvg = totalCount ? (totalSum/totalCount) : 0;
+    html += `<p style="margin-top:8px; font-weight:700;">Moyenne générale : ${generalAvg.toFixed(2)}</p>`;
+    // Convert table view into Pronote-like subject lists
+    let pretty = '';
+    Object.keys(gradesBySubject).forEach(sub => {
+        const arr = gradesBySubject[sub] || [];
+        const sum = arr.reduce((a,b)=>a+b,0);
+        const avg = arr.length ? (sum/arr.length) : 0;
+        pretty += `<div class="subject-box"><div class="subject-header"><div class="subject-title">${sub}</div><div class="subject-average">${avg.toFixed(2)}</div></div><ul class="notes-list">`;
+        // create individual note entries: date + title + class avg + score
+        // if persisted, we don't have dates/titles — synthesize simple entries with index and approximate date
+        arr.forEach((n, idx) => {
+            // synthetic date: recent dates going backward
+            const d = new Date(); d.setDate(d.getDate() - (idx*3));
+            const day = d.getDate(); const month = d.toLocaleString('default',{month:'short'});
+            const dateBadge = `${day} ${month}`;
+            const title = `Contrôle ${idx+1}`;
+            const classAvg = (Math.max(8, Math.min(16, (n + 10)/2))).toFixed(2);
+            pretty += `<li class="note-item"><div class="note-left"><div class="note-date">${dateBadge}</div><div class="note-meta"><div class="note-title">${title}</div><div class="note-sub">Moyenne classe : ${classAvg}</div></div></div><div class="note-score">${n.toFixed(2)}</div></li>`;
+        });
+        pretty += '</ul></div>';
+    });
+    pretty += `<div style="margin-top:10px; font-weight:700;">Moyenne générale : ${generalAvg.toFixed(2)}</div>`;
+
+    // If a container element (DOM node or id) is provided, render there; otherwise try existing notesContent
+    let target = null;
+    if (containerElement) {
+        if (typeof containerElement === 'string') target = document.getElementById(containerElement);
+        else target = containerElement;
+    }
+    if (!target) target = document.getElementById('notesContent') || document.getElementById('notesCard') || document.getElementById('notesContainer');
+    if (target) target.innerHTML = pretty;
+}
+</script>
